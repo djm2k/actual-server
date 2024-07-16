@@ -27,6 +27,11 @@ function parseJSON(path, allowMissing = false) {
   return JSON.parse(text);
 }
 
+/**
+ * @param {string | undefined} envVar
+ * @param {string[] | number | boolean} defaultValue
+ * @returns {string[] | number | boolean}
+ */
 function parseTrustedProxiesEnvVar(envVar, defaultValue) {
   if (!envVar) {
     return defaultValue;
@@ -36,8 +41,8 @@ function parseTrustedProxiesEnvVar(envVar, defaultValue) {
     return envVar.toLowerCase() === 'true';
   }
 
-  if (!isNaN(envVar)) {
-    return parseInt(envVar);
+  if (typeof envVar === 'string' && !Number.isNaN(Number(envVar))) {
+    return Number(envVar);
   }
 
   if (envVar.includes(',')) {
@@ -161,8 +166,7 @@ debug(`using web root directory ${finalConfig.webRoot}`);
 debug(`using login method ${finalConfig.loginMethod}`);
 debug(
   `using trusted proxies ${
-    Object.prototype.toString.call(finalConfig.trustedProxies) ===
-    '[object Array]'
+    Array.isArray(finalConfig.trustedProxies)
       ? finalConfig.trustedProxies.join(', ')
       : finalConfig.trustedProxies
   }`,
