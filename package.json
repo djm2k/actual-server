@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings 0",
     "build": "tsc",
     "e2e-test": "NODE_ENV=test yarn node --experimental-vm-modules --no-warnings=ExperimentalWarning $(yarn bin jest) ./docker/tests --detectOpenHandles --forceExit --config {}",
-    "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules --trace-warnings' jest  --coverage",
+    "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning --trace-warnings' jest --coverage",
     "types": "tsc --noEmit --incremental",
     "verify": "yarn lint && yarn types",
     "reset-password": "node src/scripts/reset-password.js",
