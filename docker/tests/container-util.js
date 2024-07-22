@@ -1,30 +1,19 @@
 import { writeFile } from 'fs/promises';
 import { GenericContainer, Wait } from 'testcontainers';
 
-/**
- * Add a log consumer to container which captures and logs events.
- * @param {GenericContainer} container
- * @param {string} logPrefix
- * @returns {GenericContainer}
- */
-export function consumeLogsWithPrefix(container, logPrefix) {
-  return container.withLogConsumer((stream) => {
-    stream.on('data', (line) => console.log(logPrefix + line));
-    stream.on('err', (line) => console.error(logPrefix + line));
-    stream.on('end', () => console.log(logPrefix + 'Stream closed'));
-  });
+
+export async function buildActionServer(buildContextPath) {
+  return  GenericContainer.fromDockerfile(buildContextPath).build();
 }
 
 /**
  * Start an `actual-server` instance from the local Dockerfile.
+ * @param {GenericContainer} newContainer
  * @returns {Promise<import('testcontainers').StartedTestContainer>}
  */
-export async function startActualContainer() {
-  let newContainer = new GenericContainer('../../Dockerfile')
-    .withExposedPorts(5006)
-    .withWaitStrategy(Wait.forListeningPorts());
-
-  newContainer = consumeLogsWithPrefix(newContainer, 'ActualServer: ');
+export async function startActualContainer(newContainer) {
+  newContainer = newContainer.withExposedPorts(5006)
+                             .withWaitStrategy(Wait.forListeningPorts());
 
   return newContainer.start();
 }
@@ -37,9 +26,9 @@ export async function startActualContainer() {
  * @returns {Promise<import('testcontainers').StartedTestContainer>}
  */
 export async function startCaddyContainer(actualServerPort) {
-  let caddyContainer = new GenericContainer('caddyContainer:latest')
+  let caddyContainer = new GenericContainer('caddy:latest')
     .withExposedPorts(80)
-    .withWaitStrategy(Wait.forListeningPorts());
+    .withWaitStrategy(Wait.forHttp('/', 80).forStatusCode(200));
 
   await writeFile(
     './Caddyfile',

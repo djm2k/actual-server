@@ -1,6 +1,6 @@
 import { unlink } from 'fs/promises';
-import { request } from 'http';
-import { startActualContainer, startCaddyContainer } from './container-util.js';
+import request from 'supertest';
+import { buildActionServer, startActualContainer, startCaddyContainer } from './container-util.js';
 
 // Requires testcontainers:
 // `yarn add -D testcontainers`
@@ -24,32 +24,30 @@ import { startActualContainer, startCaddyContainer } from './container-util.js';
 // DEBUG=testcontainers* DOCKER_HOST=unix:///var/run/docker.sock yarn run e2e-test
 // https://node.testcontainers.org/configuration/
 
+let newActualServerBuild = await buildActionServer('./');
 describe('Actual Server with Caddy', () => {
   let actualServerContainer;
   let caddyContainer;
 
   beforeAll(async () => {
-    actualServerContainer = await startActualContainer();
+    actualServerContainer = await startActualContainer(newActualServerBuild);
     caddyContainer = await startCaddyContainer(
       actualServerContainer.getMappedPort(5006),
     );
-  }, 61 * 1000);
+  }, 66 * 1000);
 
-  it('should work with default config', async () => {
-    const host = caddyContainer.getHost();
-    console.log('Caddy host: ' + host);
-    request(
-      {
-        hostname: host,
-        port: caddyContainer.getMappedPort(80),
-        method: 'get',
-        path: '/health',
-      },
-      (res) => {
-        expect(res.statusCode).toBe(200);
-      },
-    );
-  }, 30000);
+  it('should not allow login with no password', async () => {
+    const hostname = caddyContainer.getHost();
+    const port = caddyContainer.getMappedPort(80);
+    const caddyHost = `${hostname}:${port}`;
+    console.log('Caddy host: ' + caddyHost);
+    
+    const caddyRequest = request(caddyHost);
+    
+    caddyRequest.post('/account/login').expect({"status":"error","reason":"invalid-password"}, (err) => {
+      throw err;
+    });
+  });
 
   afterAll(async () => {
     if (caddyContainer) await caddyContainer.stop();
