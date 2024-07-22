@@ -6,7 +6,6 @@ import { startActualContainer, startCaddyContainer } from './container-util.js';
 // `yarn add -D testcontainers`
 
 // If using WSL, requires these steps:
-// https://java.testcontainers.org/supported_docker_environment/windows/#windows-subsystem-for-linux-wsl
 // - Expose the Docker for Windows daemon on tcp port 2375 without TLS.
 // (Right-click the Docker Desktop icon on the task bar > Change Settings).
 // - edit /etc/docker and add the following:
@@ -18,9 +17,12 @@ import { startActualContainer, startCaddyContainer } from './container-util.js';
 // }
 // - Set the DOCKER_HOST environment variable inside the WSL shell to tcp://localhost:2375.
 // It is recommended to add this to your ~/.bashrc file, so it’s available every time you open your terminal.
+// https://java.testcontainers.org/supported_docker_environment/windows/#windows-subsystem-for-linux-wsl
+// https://stackoverflow.com/questions/63416280/how-to-expose-docker-tcp-socket-on-wsl2-wsl-installed-docker-not-docker-deskt
 
 // debug with:
 // DEBUG=testcontainers* DOCKER_HOST=unix:///var/run/docker.sock yarn run e2e-test
+// https://node.testcontainers.org/configuration/
 
 describe('Actual Server with Caddy', () => {
   let actualServerContainer;
