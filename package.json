@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "build": "tsc",
-    "e2e-test": "NODE_ENV=test yarn node --experimental-vm-modules --no-warnings=ExperimentalWarning $(yarn bin jest) ./docker/tests --detectOpenHandles --forceExit --config {}",
+    "e2e-test": "DEBUG=testcontainers* NODE_ENV=test yarn node --experimental-vm-modules --no-warnings=ExperimentalWarning $(yarn bin jest) ./docker/tests --detectOpenHandles --forceExit --config {}",
     "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning --trace-warnings' jest --coverage",
     "db:migrate": "NODE_ENV=development node src/run-migrations.js up",
     "db:downgrade": "NODE_ENV=development node src/run-migrations.js down",
