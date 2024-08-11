@@ -4,6 +4,8 @@
     // DOM for URL global in Node 16+
     "lib": ["ES2021"],
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
