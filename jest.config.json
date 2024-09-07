@@ -1,7 +1,7 @@
 {
   "globalSetup": "./jest.global-setup.js",
   "globalTeardown": "./jest.global-teardown.js",
-  "testPathIgnorePatterns": ["dist", "/node_modules/", "/build/"],
+  "testPathIgnorePatterns": ["dist", "/node_modules/", "/build/", "/docker/"],
   "roots": ["<rootDir>"],
   "moduleFileExtensions": ["ts", "js", "json"],
   "testEnvironment": "node",
