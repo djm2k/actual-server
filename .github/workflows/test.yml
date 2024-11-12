@@ -27,3 +27,5 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Test
         run: yarn test
+      - name: E2E Test
+        run: yarn e2e-test
