@@ -3,17 +3,17 @@ import { GenericContainer, Wait } from 'testcontainers';
 
 
 /**
- * Start an `actual-server` from the root build context, using port 5006.
+ * Build an `actual-server` container from the root build context.
+ * Expose container port 5006 and wait until the Listening on... log message.
  */
-export async function startActualContainer(buildContext = './') {
+export async function ActualServerBuild(buildContext = './'): Promise<GenericContainer> {
   const newContainer = await GenericContainer
     .fromDockerfile(buildContext)
     .build();
 
   return newContainer
     .withExposedPorts(5006)
-    .withWaitStrategy(Wait.forListeningPorts())
-    .start();
+    .withWaitStrategy(Wait.forLogMessage(/Listening on.*/))
 }
 
 /**
@@ -58,31 +58,25 @@ export async function startTraefikContainer(actualServerPort: number) {
     .withExposedPorts(80)
     .withCopyFilesToContainer([{ source, target: "/etc/traefik/traefik.yaml" }])
     .withBindMounts([{ source: "/var/run/docker.sock", target: "/var/run/docker.sock" }])
-    .withWaitStrategy(Wait.forListeningPorts())
+    .withWaitStrategy(Wait.forHealthCheck())
 
 
   return traefikContainer.start();
-
-
 }
 
 /**
  * Start an `actual-server` from the root build context, using port 5006.
  */
-export async function startActualContainerWithTraefik(buildContext = './') {
-  const newContainer = await GenericContainer
-    .fromDockerfile(buildContext)
-    .build();
+// export async function startActualContainerWithTraefik(buildContext = './') {
+//   const newContainer = await GenericContainer
+//     .fromDockerfile(buildContext)
+//     .build();
 
-  return newContainer.withLabels({
-    // "traefik.enable": "true",
-    "traefik.http.routers.actual-server.entrypoints": "web",
-    // "traefik.http.services.actual-server.loadbalancer.server.port": "5006"
-  })
-    .withExposedPorts(5006)
-    .withWaitStrategy(Wait.forListeningPorts())
-    .start();
-}
+//   return newContainer
+//     .withExposedPorts(5006)
+//     .withWaitStrategy(Wait.forLogMessage(/Listening on.*/))
+//     .start();
+// }
 //   traefik:
 //     image: traefik:latest
 //     restart: unless-stopped

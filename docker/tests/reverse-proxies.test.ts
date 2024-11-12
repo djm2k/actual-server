@@ -1,8 +1,15 @@
 import { unlink } from 'fs/promises';
 import request from 'supertest';
-import { startActualContainer, startActualContainerWithTraefik, startCaddyContainer, startTraefikContainer } from './container-util.ts';
+import { ActualServerBuild, startTraefikContainer } from './container-util.ts';
 import { StartedTestContainer } from 'testcontainers';
 
+
+// increase if docker build times out
+const CONTAINER_START_TIMEOUT_SECONDS = 90;
+// convert to milliseconds
+const CONTAINER_START_TIMEOUT_MS = CONTAINER_START_TIMEOUT_SECONDS * 1000;
+
+const ACTUAL_SERVER_DEFAULT_PORT = 5006;
 
 // describe('Actual Server with Caddy', () => {
 //   let actualServerContainer;
@@ -11,9 +18,9 @@ import { StartedTestContainer } from 'testcontainers';
 //   beforeAll(async () => {
 //     actualServerContainer = await startActualContainer();
 //     caddyContainer = await startCaddyContainer(
-//       actualServerContainer.getMappedPort(5006),
+//       actualServerContainer.getMappedPort(ACTUAL_SERVER_DEFAULT_PORT),
 //     );
-//   }, 66 * 1000);
+//   }, CONTAINER_START_TIMEOUT_MS);
 
 //   it('should allow login', async () => {
 //     const hostname = caddyContainer.getHost();
@@ -40,34 +47,37 @@ import { StartedTestContainer } from 'testcontainers';
 //   });
 // });
 
-// Traefik, TODO modularise
 describe('Actual Server with Traefik', () => {
-  let actualServerContainer: StartedTestContainer;
-  let traefikContainer: StartedTestContainer;
+  let actualServer: StartedTestContainer;
+  let traefik: StartedTestContainer;
 
   beforeAll(async () => {
-    actualServerContainer = await startActualContainerWithTraefik();
-    traefikContainer = await startTraefikContainer(
-      actualServerContainer.getMappedPort(5006),
-    );
-  }, 66 * 1000);
+    const builtActualServer = await ActualServerBuild();
+    actualServer = await builtActualServer
+      .withLabels({
+        "traefik.http.routers.actual-server.entrypoints": "web",
+      }).start()
 
-  it('should allow login', async () => {
-    const hostname = traefikContainer.getHost();
-    const port = traefikContainer.getMappedPort(80);
-    const traefikHost = `${hostname}:${port}`;
-    // console.log('Traefik host: ' + traefikHost);
+    traefik = await startTraefikContainer(actualServer.getMappedPort(ACTUAL_SERVER_DEFAULT_PORT));
+  }, CONTAINER_START_TIMEOUT_MS);
 
-    const traefikRequest = request(traefikHost);
+  it('should return info', async () => {
+    const hostname = traefik.getHost();
+    const port = traefik.getMappedPort(80);
+    const hostConnectionString = `http://${hostname}:${port}`;
 
-    traefikRequest.get('/').then(res => {
-      expect(res.statusCode).toBe(200)
-    });
+    request(hostConnectionString)
+      .get('/info')
+      .then(res => {
+        // console.log(res);
+        expect(res.statusCode).toBe(200)
+      });
+
   });
 
   afterAll(async () => {
-    if (traefikContainer) await traefikContainer.stop();
-    if (actualServerContainer) await actualServerContainer.stop();
+    if (actualServer) await actualServer.stop();
+    if (traefik) await traefik.stop();
 
     // Delete traefik.yml from disk, if it exists
     await unlink('./traefik.yaml').catch((_err) => {
@@ -77,5 +87,29 @@ describe('Actual Server with Traefik', () => {
   });
 });
 
+describe('Actual Server by itself', () => {
+  let actualServer: StartedTestContainer;
 
+  beforeAll(async () => {
+    const builtActualServer = await ActualServerBuild();
+    actualServer = await builtActualServer.start()
+  }, CONTAINER_START_TIMEOUT_MS);
 
+  it('should return info', async () => {
+    const hostname = actualServer.getHost();
+    const port = actualServer.getMappedPort(ACTUAL_SERVER_DEFAULT_PORT);
+    const hostConnectionString = `http://${hostname}:${port}`;
+
+    request(hostConnectionString)
+      .get('/info')
+      .then(res => {
+        // console.log(res);
+        expect(res.statusCode).toBe(200)
+      });
+
+  });
+
+  afterAll(async () => {
+    if (actualServer) await actualServer.stop();
+  });
+});
